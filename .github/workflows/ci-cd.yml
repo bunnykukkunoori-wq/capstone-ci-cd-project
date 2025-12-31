@@ -18,8 +18,10 @@ jobs:
         username: "9148428653"
         password: ${{ secrets.DOCKER_PASSWORD }}
 
-    - name: Build Backend
-      run: docker build -f ./backend/Dockerfile.dev -t 9148428653/backend:latest ./backend
+    - name: Locate Backend Dockerfile
+      run: |
+       echo "Searching for Dockerfile in backend..."
+       find backend -maxdepth 3 -type f -iname "dockerfile*"
 
     - name: Build Frontend
       run: docker build -f ./frontend/Dockerfile -t 9148428653/frontend:latest ./frontend
@@ -48,5 +50,6 @@ jobs:
         docker pull 9148428653/frontend:latest &&
         docker-compose -f /home/app/docker-compose.yml up -d --force-recreate
         "
+
 
 
