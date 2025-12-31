@@ -1,0 +1,51 @@
+name: CI/CD Staging
+
+on:
+  push:
+    branches: ["staging"]
+
+jobs:
+  build-test-scan:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Docker Login
+        run: echo "${{ secrets.DOCKER_PASS }}" |
+             docker login -u ${{ secrets.DOCKER_USER }} --password-stdin
+
+      - name: Build Backend
+        run: docker build -t user/backend:staging ./backend
+
+      - name: Build Frontend
+        run: docker build -t user/frontend:staging ./frontend
+
+      - name: Run Tests
+        run: docker run user/backend:staging npm test
+
+      - name: Trivy Security Scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: user/backend:staging
+          severity: CRITICAL,HIGH
+
+      - name: Push Images
+        run: |
+          docker push user/backend:staging
+          docker push user/frontend:staging
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build-test-scan
+
+    steps:
+      - name: Deploy to Staging Server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_KEY }}
+          script: |
+            cd /project
+            ./deploy.sh
