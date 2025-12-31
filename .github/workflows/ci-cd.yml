@@ -18,8 +18,9 @@ jobs:
         username: "9148428653"
         password: ${{ secrets.DOCKER_PASSWORD }}
 
-    - name: Build Backend
-      run: docker build -t 9148428653/backend:latest ./backend
+   - name: Build Backend
+  run: docker build -f ./backend/Dockerfile -t 9148428653/backend:latest ./backend
+
 
     - name: Build Frontend
       run: docker build -t 9148428653/frontend:latest ./frontend
@@ -48,3 +49,4 @@ jobs:
         docker pull 9148428653/frontend:latest &&
         docker-compose -f /home/app/docker-compose.yml up -d --force-recreate
         "
+
