@@ -15,14 +15,14 @@ jobs:
     - name: Login to DockerHub
       uses: docker/login-action@v3
       with:
-        username: ${{ secrets.DOCKER_USERNAME }}
+        username: "9148428653"
         password: ${{ secrets.DOCKER_PASSWORD }}
 
     - name: Build Backend
-      run: docker build -t ${{ secrets.DOCKER_USER }}/backend:latest ./backend
+      run: docker build -t 9148428653/backend:latest ./backend
 
     - name: Build Frontend
-      run: docker build -t ${{ secrets.DOCKER_USER }}/frontend:latest ./frontend
+      run: docker build -t 9148428653/frontend:latest ./frontend
 
     - name: Install Trivy
       run: |
@@ -31,21 +31,20 @@ jobs:
         sudo dpkg -i trivy_Linux-64bit.deb
 
     - name: Scan Backend
-      run: trivy image --severity HIGH,CRITICAL --exit-code 1 ${{ secrets.DOCKER_USER }}/backend:latest
+      run: trivy image --severity HIGH,CRITICAL --exit-code 1 9148428653/backend:latest
 
     - name: Scan Frontend
-      run: trivy image --severity HIGH,CRITICAL --exit-code 1 ${{ secrets.DOCKER_USER }}/frontend:latest
+      run: trivy image --severity HIGH,CRITICAL --exit-code 1 9148428653/frontend:latest
 
     - name: Push Images
       run: |
-        docker push ${{ secrets.DOCKER_USER }}/backend:latest
-        docker push ${{ secrets.DOCKER_USER }}/frontend:latest
+        docker push 9148428653/backend:latest
+        docker push 9148428653/frontend:latest
 
     - name: Deploy to Staging
       run: |
         ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} "
-        docker pull ${{ secrets.DOCKER_USER }}/backend:latest &&
-        docker pull ${{ secrets.DOCKER_USER }}/frontend:latest &&
+        docker pull 9148428653/backend:latest &&
+        docker pull 9148428653/frontend:latest &&
         docker-compose -f /home/app/docker-compose.yml up -d --force-recreate
         "
-
