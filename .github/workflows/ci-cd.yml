@@ -12,60 +12,68 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
 
+    # ---------- LOGIN ----------
     - name: Login to DockerHub
       uses: docker/login-action@v3
       with:
         username: "9148428653"
         password: ${{ secrets.DOCKER_PASSWORD }}
 
-    - name: Locate Backend Dockerfile
+    # ---------- DEBUG PROJECT ----------
+    - name: Show Project Structure
       run: |
-       echo "Searching for Dockerfile in backend..."
-       find backend -maxdepth 3 -type f -iname "dockerfile*"
+        echo "===== PROJECT STRUCTURE ====="
+        ls -R
 
-    - name: Locate Frontend Dockerfile
+    # ---------- CHECK DOCKERFILES ----------
+    - name: Validate Dockerfiles
       run: |
-       echo "Searching Frontend Dockerfile..."
-       find frontend -maxdepth 4 -type f -iname "dockerfile*"
-       
+        if [ ! -f ./backend/Dockerfile ]; then
+          echo "❌ ERROR: backend/Dockerfile NOT FOUND"
+          echo "➡️ Create backend/Dockerfile before running pipeline"
+          exit 1
+        fi
+
+        if [ ! -f ./frontend/Dockerfile ]; then
+          echo "❌ ERROR: frontend/Dockerfile NOT FOUND"
+          echo "➡️ Create frontend/Dockerfile before running pipeline"
+          exit 1
+        fi
+
+    # ---------- BUILD + PUSH BACKEND ----------
+    - name: Build & Push Backend
+      uses: docker/build-push-action@v6
+      with:
+        context: ./backend
+        file: ./backend/Dockerfile
+        push: true
+        tags: 9148428653/backend:latest
+
+    # ---------- BUILD + PUSH FRONTEND ----------
+    - name: Build & Push Frontend
+      uses: docker/build-push-action@v6
+      with:
+        context: ./frontend
+        file: ./frontend/Dockerfile
+        push: true
+        tags: 9148428653/frontend:latest
+
+    # ---------- INSTALL TRIVY ----------
     - name: Install Trivy
       run: |
         sudo apt-get update
         sudo apt-get install -y curl
-        curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh |sudo sh -s -- -b /usr/local/bin
+        curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
+        | sudo sh -s -- -b /usr/local/bin
 
-    - name: Show project structure
-      run: |
-        ls -R
-
-    - name: Build Backend
-      run: docker build -f ./backend/Dockerfile -t 9148428653/backend:latest ./backend
-
-    - name: Build Frontend
-      run: docker build -f ./frontend/Dockerfile -t 9148428653/frontend:latest ./frontend
-
-    - name: Verify Images Built
-      run: docker images
-
-    - name: Push Images
-      run: |
-       docker push 9148428653/backend:latest
-       docker push 9148428653/frontend:latest
-
-
-
-    - name: Pull Images (Make sure they exist)
-      run: |
-        docker pull 9148428653/backend:latest
-        docker pull 9148428653/frontend:latest
-
+    # ---------- SCAN ----------
     - name: Scan Backend
       run: trivy image --severity HIGH,CRITICAL --exit-code 1 9148428653/backend:latest
 
     - name: Scan Frontend
       run: trivy image --severity HIGH,CRITICAL --exit-code 1 9148428653/frontend:latest
 
-
+    # ---------- DEPLOY ----------
     - name: Deploy to Staging
       run: |
         ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} "
