@@ -34,10 +34,21 @@ jobs:
         sudo apt-get install -y curl
         curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh |sudo sh -s -- -b /usr/local/bin
         
+    - name: Build Backend
+      run: docker build -f ./backend/Dockerfile -t 9148428653/backend:latest ./backend
+
+    - name: Build Frontend
+      run: docker build -f ./frontend/Dockerfile -t 9148428653/frontend:latest ./frontend
+
+    - name: Verify Images Built
+      run: docker images
+
     - name: Push Images
       run: |
-        docker push 9148428653/backend:latest
-        docker push 9148428653/frontend:latest
+       docker push 9148428653/backend:latest
+       docker push 9148428653/frontend:latest
+
+
 
     - name: Pull Images (Make sure they exist)
       run: |
@@ -58,6 +69,7 @@ jobs:
         docker pull 9148428653/frontend:latest &&
         docker-compose -f /home/app/docker-compose.yml up -d --force-recreate
         "
+
 
 
 
