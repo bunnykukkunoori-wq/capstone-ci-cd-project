@@ -30,9 +30,14 @@ jobs:
       
     - name: Install Trivy
       run: |
-        sudo apt-get update
-        wget https://github.com/aquasecurity/trivy/releases/latest/download/trivy_Linux-64bit.deb
-        sudo dpkg -i trivy_Linux-64bit.deb
+       sudo apt-get update
+       sudo apt-get install -y wget apt-transport-https gnupg lsb-release
+       wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | \
+       sudo gpg --dearmor -o /usr/share/keyrings/trivy.gpg
+       echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb stable main" | \
+       sudo tee /etc/apt/sources.list.d/trivy.list
+       sudo apt-get update
+       sudo apt-get install -y trivy
 
     - name: Scan Backend
       run: trivy image --severity HIGH,CRITICAL --exit-code 1 9148428653/backend:latest
@@ -52,6 +57,7 @@ jobs:
         docker pull 9148428653/frontend:latest &&
         docker-compose -f /home/app/docker-compose.yml up -d --force-recreate
         "
+
 
 
 
