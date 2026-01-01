@@ -23,9 +23,11 @@ jobs:
        echo "Searching for Dockerfile in backend..."
        find backend -maxdepth 3 -type f -iname "dockerfile*"
 
-    - name: Build Frontend
-      run: docker build -f ./frontend/Dockerfile -t 9148428653/frontend:latest ./frontend
-
+    - name: Locate Frontend Dockerfile
+      run: |
+       echo "Searching Frontend Dockerfile..."
+       find frontend -maxdepth 4 -type f -iname "dockerfile*"
+      
     - name: Install Trivy
       run: |
         sudo apt-get update
@@ -50,6 +52,7 @@ jobs:
         docker pull 9148428653/frontend:latest &&
         docker-compose -f /home/app/docker-compose.yml up -d --force-recreate
         "
+
 
 
 
