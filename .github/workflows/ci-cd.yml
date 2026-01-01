@@ -19,28 +19,35 @@ jobs:
         username: "9148428653"
         password: ${{ secrets.DOCKER_PASSWORD }}
 
-    # ---------- DEBUG PROJECT ----------
-    - name: Show Project Structure
+    # ---------- LOCATE DOCKERFILES ----------
+    - name: Locate Backend Dockerfile
       run: |
-        echo "===== PROJECT STRUCTURE ====="
-        ls -R
+        echo "Searching for Dockerfile in backend..."
+        find backend -maxdepth 4 -type f -iname "dockerfile*"
 
-    # ---------- CHECK DOCKERFILES ----------
+    - name: Locate Frontend Dockerfile
+      run: |
+        echo "Searching for Dockerfile in frontend..."
+        find frontend -maxdepth 4 -type f -iname "dockerfile*"
+
+    # ---------- SHOW PROJECT STRUCTURE ----------
+    - name: Show Project Structure
+      run: ls -R
+
+    # ---------- VALIDATE DOCKERFILES ----------
     - name: Validate Dockerfiles
       run: |
         if [ ! -f ./backend/Dockerfile ]; then
-          echo "❌ ERROR: backend/Dockerfile NOT FOUND"
-          echo "➡️ Create backend/Dockerfile before running pipeline"
+          echo "❌ backend/Dockerfile NOT FOUND"
           exit 1
         fi
-
         if [ ! -f ./frontend/Dockerfile ]; then
-          echo "❌ ERROR: frontend/Dockerfile NOT FOUND"
-          echo "➡️ Create frontend/Dockerfile before running pipeline"
+          echo "❌ frontend/Dockerfile NOT FOUND"
           exit 1
         fi
+        echo "✅ Dockerfiles found"
 
-    # ---------- BUILD + PUSH BACKEND ----------
+    # ---------- BUILD & PUSH BACKEND ----------
     - name: Build & Push Backend
       uses: docker/build-push-action@v6
       with:
@@ -49,7 +56,7 @@ jobs:
         push: true
         tags: 9148428653/backend:latest
 
-    # ---------- BUILD + PUSH FRONTEND ----------
+    # ---------- BUILD & PUSH FRONTEND ----------
     - name: Build & Push Frontend
       uses: docker/build-push-action@v6
       with:
@@ -81,13 +88,3 @@ jobs:
         docker pull 9148428653/frontend:latest &&
         docker-compose -f /home/app/docker-compose.yml up -d --force-recreate
         "
-
-
-
-
-
-
-
-
-
-
