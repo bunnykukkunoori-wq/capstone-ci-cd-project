@@ -80,6 +80,8 @@ jobs:
     - name: Scan Frontend
       run: trivy image --severity HIGH,CRITICAL --ignore-unfixed --exit-code 0 9148428653/frontend:latest
 
+
+
     # ---------- DEPLOY ----------
     - name: Deploy Locally
       working-directory: ${{ github.workspace }}
@@ -87,33 +89,6 @@ jobs:
        docker pull 9148428653/backend:latest
        docker pull 9148428653/frontend:latest
        docker compose -f docker-compose.yml up -d --force-recreate
-
-deploy_staging:
-     runs-on: self-hosted
-     needs: build_and_push        # depends on your build job
-     environment: staging
-
-      steps:
-       - name: Checkout code
-         uses: actions/checkout@v4
-
-    - name: Pull latest images
-      run: |
-        docker pull 9148428653/backend:latest
-        docker pull 9148428653/frontend:latest
-
-    - name: Stop old containers
-      run: |
-        docker compose down
-
-    - name: Start new containers
-      run: |
-        docker compose up -d --force-recreate
-
-    - name: Verify deployment
-      run: |
-        docker ps
-        curl -f http://localhost:5000/health
 
 
 
