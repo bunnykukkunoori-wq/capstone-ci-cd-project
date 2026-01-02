@@ -91,6 +91,22 @@ jobs:
        docker compose -f docker-compose.yml up -d --force-recreate
 
 
+  deploy:
+       runs-on: ubuntu-latest
+       environment: staging
+
+       needs: [build-test-scan-deploy]
+
+       steps:
+       - name: Checkout
+         uses: actions/checkout@v4
+
+       - name: Deploy to Local Server
+         run: |
+          docker pull 9148428653/backend:latest
+          docker pull 9148428653/frontend:latest
+          docker compose -f docker-compose.yml up -d --force-recreate
+
 
 
 
