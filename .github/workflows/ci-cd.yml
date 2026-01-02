@@ -82,10 +82,11 @@ jobs:
 
     # ---------- DEPLOY ----------
     - name: Deploy Locally
+      working-directory: ${{ github.workspace }}
       run: |
        docker pull 9148428653/backend:latest
        docker pull 9148428653/frontend:latest
-       docker compose -f /home/app/docker-compose.yml up -d --force-recreate
+       docker compose -f docker-compose.yml up -d --force-recreate
 
 
 
