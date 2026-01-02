@@ -5,26 +5,67 @@ on:
     branches: ["main"]
 
 jobs:
-
-  build-and-push:
+  build-test-scan-deploy:
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout
       uses: actions/checkout@v4
 
+    # ---------- LOGIN ----------
     - name: Login to DockerHub
       uses: docker/login-action@v3
       with:
         username: "9148428653"
         password: ${{ secrets.DOCKER_PASSWORD }}
 
-    - name: Build Backend
-      run: docker build -t 9148428653/backend:latest ./backend
+    # ---------- LOCATE DOCKERFILES ----------
+    - name: Locate Backend Dockerfile
+      run: |
+        echo "Searching for Dockerfile in backend..."
+        find backend -maxdepth 4 -type f -iname "dockerfile*"
 
-    - name: Build Frontend
-      run: docker build -t 9148428653/frontend:latest ./frontend
+    - name: Locate Frontend Dockerfile
+      run: |
+        echo "Searching for Dockerfile in frontend..."
+        find frontend -maxdepth 4 -type f -iname "dockerfile*"
 
+    # ---------- SHOW PROJECT STRUCTURE ----------
+    - name: Show Project Structure
+      run: ls -R
+
+    # ---------- VALIDATE DOCKERFILES ----------
+    - name: Validate Dockerfiles
+      run: |
+        if [ ! -f ./backend/Dockerfile ]; then
+          echo " backend/Dockerfile NOT FOUND"
+          exit 1
+        fi
+        if [ ! -f ./frontend/Dockerfile ]; then
+          echo " frontend/Dockerfile NOT FOUND"
+          exit 1
+        fi
+        echo " Dockerfiles found"
+
+    # ---------- BUILD & PUSH BACKEND ----------
+    - name: Build & Push Backend
+      uses: docker/build-push-action@v6
+      with:
+        context: ./backend
+        file: ./backend/Dockerfile
+        push: true
+        tags: 9148428653/backend:latest
+
+    # ---------- BUILD & PUSH FRONTEND ----------
+    - name: Build & Push Frontend
+      uses: docker/build-push-action@v6
+      with:
+        context: ./frontend
+        file: ./frontend/Dockerfile
+        push: true
+        tags: 9148428653/frontend:latest
+
+    # ---------- INSTALL TRIVY ----------
     - name: Install Trivy
       run: |
         sudo apt-get update
@@ -32,28 +73,18 @@ jobs:
         curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
         | sudo sh -s -- -b /usr/local/bin
 
+    # ---------- SCAN ----------
     - name: Scan Backend
-      run: trivy image --severity HIGH,CRITICAL --ignore-unfixed --exit-code 0 9148428653/backend:latest
+      run: trivy image --severity HIGH,CRITICAL --exit-code 1 9148428653/backend:latest
 
     - name: Scan Frontend
-      run: trivy image --severity HIGH,CRITICAL --ignore-unfixed --exit-code 0 9148428653/frontend:latest
+      run: trivy image --severity HIGH,CRITICAL --exit-code 1 9148428653/frontend:latest
 
-    - name: Push Images
+    # ---------- DEPLOY ----------
+    - name: Deploy to Staging
       run: |
-        docker push 9148428653/backend:latest
-        docker push 9148428653/frontend:latest
-
-
-  deploy:
-    needs: build-and-push
-    runs-on: self-hosted
-
-    steps:
-    - name: Pull Latest Images
-      run: |
-        docker pull 9148428653/backend:latest
-        docker pull 9148428653/frontend:latest
-
-    - name: Deploy Containers
-      run: |
+        ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} "
+        docker pull 9148428653/backend:latest &&
+        docker pull 9148428653/frontend:latest &&
         docker-compose -f /home/app/docker-compose.yml up -d --force-recreate
+        "
