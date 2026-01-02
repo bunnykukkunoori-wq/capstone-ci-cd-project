@@ -88,21 +88,24 @@ jobs:
        docker pull 9148428653/frontend:latest
        docker compose -f docker-compose.yml up -d --force-recreate
 
-  deploy:
-    runs-on: ubuntu-latest
-    environment: staging
+         deploy_staging:
+         runs-on: self-hosted
+         needs: build_and_push
+         environment: staging
 
-    needs: [build-test-scan-deploy]
+        steps:
+        - name: Checkout
+          uses: actions/checkout@v4
 
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v4
+        - name: Pull Latest Docker Images
+        run: |
+          docker pull 9148428653/backend:latest
+          docker pull 9148428653/frontend:latest
 
-    - name: Deploy to Local Server
-      run: |
-        docker pull 9148428653/backend:latest
-        docker pull 9148428653/frontend:latest
-        docker compose -f docker-compose.yml up -d --force-recreate
+       - name: Deploy Containers
+        run: |
+          docker compose -f docker-compose.yml up -d --force-recreate
+
 
 
 
