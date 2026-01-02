@@ -81,11 +81,11 @@ jobs:
       run: trivy image --severity HIGH,CRITICAL --ignore-unfixed --exit-code 0 9148428653/frontend:latest
 
     # ---------- DEPLOY ----------
-    - name: Deploy to Staging
+    - name: Deploy Locally
       run: |
-        ssh ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} "
-        docker pull 9148428653/backend:latest &&
-        docker pull 9148428653/frontend:latest &&
-        docker-compose -f /home/app/docker-compose.yml up -d --force-recreate
-        "
+       docker pull 9148428653/backend:latest
+       docker pull 9148428653/frontend:latest
+       docker-compose -f /home/app/docker-compose.yml up -d --force-recreate
+
+
 
