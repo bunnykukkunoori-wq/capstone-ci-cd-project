@@ -5,111 +5,109 @@ on:
     branches: ["main"]
 
 jobs:
-  build-test-scan-deploy:
+
+  # =========================
+  # BUILD · TEST · SCAN · PUSH
+  # =========================
+  build_test_scan_push:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    # ---------- LOGIN ----------
-    - name: Login to DockerHub
-      uses: docker/login-action@v3
-      with:
-        username: "9148428653"
-        password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: "9148428653"
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
-    # ---------- LOCATE DOCKERFILES ----------
-    - name: Locate Backend Dockerfile
-      run: |
-        echo "Searching for Dockerfile in backend..."
-        find backend -maxdepth 4 -type f -iname "dockerfile*"
+      - name: Validate Dockerfiles
+        run: |
+          test -f backend/Dockerfile
+          test -f frontend/Dockerfile
 
-    - name: Locate Frontend Dockerfile
-      run: |
-        echo "Searching for Dockerfile in frontend..."
-        find frontend -maxdepth 4 -type f -iname "dockerfile*"
+      - name: Build & Push Backend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: true
+          tags: 9148428653/backend:latest
 
-    # ---------- SHOW PROJECT STRUCTURE ----------
-    - name: Show Project Structure
-      run: ls -R
+      - name: Build & Push Frontend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: true
+          tags: 9148428653/frontend:latest
 
-    # ---------- VALIDATE DOCKERFILES ----------
-    - name: Validate Dockerfiles
-      run: |
-        if [ ! -f ./backend/Dockerfile ]; then
-          echo " backend/Dockerfile NOT FOUND"
-          exit 1
-        fi
-        if [ ! -f ./frontend/Dockerfile ]; then
-          echo " frontend/Dockerfile NOT FOUND"
-          exit 1
-        fi
-        echo " Dockerfiles found"
+      - name: Install Trivy
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y curl
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
+          | sudo sh -s -- -b /usr/local/bin
 
-    # ---------- BUILD & PUSH BACKEND ----------
-    - name: Build & Push Backend
-      uses: docker/build-push-action@v6
-      with:
-        context: ./backend
-        file: ./backend/Dockerfile
-        push: true
-        tags: 9148428653/backend:latest
+      - name: Scan Backend Image
+        run: trivy image --severity HIGH,CRITICAL --ignore-unfixed --exit-code 0 9148428653/backend:latest
 
-    # ---------- BUILD & PUSH FRONTEND ----------
-    - name: Build & Push Frontend
-      uses: docker/build-push-action@v6
-      with:
-        context: ./frontend
-        file: ./frontend/Dockerfile
-        push: true
-        tags: 9148428653/frontend:latest
-
-    # ---------- INSTALL TRIVY ----------
-    - name: Install Trivy
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y curl
-        curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
-        | sudo sh -s -- -b /usr/local/bin
-
-    # ---------- SCAN ----------
-    - name: Scan Backend
-      run: trivy image --severity HIGH,CRITICAL --ignore-unfixed --exit-code 0 9148428653/backend:latest
-
-    - name: Scan Frontend
-      run: trivy image --severity HIGH,CRITICAL --ignore-unfixed --exit-code 0 9148428653/frontend:latest
+      - name: Scan Frontend Image
+        run: trivy image --severity HIGH,CRITICAL --ignore-unfixed --exit-code 0 9148428653/frontend:latest
 
 
+  # =========================
+  # STAGING DEPLOYMENT
+  # =========================
+  deploy_staging:
+    runs-on: self-hosted
+    needs: build_test_scan_push
+    environment: staging
 
-    # ---------- DEPLOY ----------
-    - name: Deploy Locally
-      working-directory: ${{ github.workspace }}
-      run: |
-       docker pull 9148428653/backend:latest
-       docker pull 9148428653/frontend:latest
-       docker compose -f docker-compose.yml up -d --force-recreate
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-
-  deploy-staging:
-       runs-on: ubuntu-latest
-       environment: staging
-
-       needs: [build-test-scan-deploy]
-
-       steps:
-       - name: Checkout
-         uses: actions/checkout@v4
-
-       - name: Deploy to Local Server
-         run: |
+      - name: Pull images
+        run: |
           docker pull 9148428653/backend:latest
           docker pull 9148428653/frontend:latest
-          docker compose -f docker-compose.yml up -d --force-recreate
+
+      - name: Deploy to staging
+        run: |
+          docker compose down
+          docker compose up -d --force-recreate
+
+      - name: Verify staging
+        run: |
+          docker ps
+          curl -f http://localhost:5000/health
 
 
+  # =========================
+  # PRODUCTION DEPLOYMENT
+  # =========================
+  deploy_production:
+    runs-on: self-hosted
+    needs: deploy_staging
+    environment: production
 
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
+      - name: Pull images
+        run: |
+          docker pull 9148428653/backend:latest
+          docker pull 9148428653/frontend:latest
 
+      - name: Deploy to production
+        run: |
+          docker compose down
+          docker compose up -d --force-recreate
 
-
+      - name: Verify production
+        run: |
+          docker ps
+          curl -f http://localhost:5000/health
