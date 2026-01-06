@@ -11,7 +11,7 @@ function App() {
 
   return (
     <center>
-      <h1>CI/CD Project 🚀</h1>
+      <h1>CI/CD Project </h1>
       <p>Frontend talking to Backend Successfully</p>
       <h3>Server Time: {time}</h3>
     </center>
