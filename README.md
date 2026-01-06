@@ -61,3 +61,60 @@ PostgreSQL Database
 • Trivy – Security vulnerability scanning
 
 • Ubuntu Linux – CI runner environment
+
+## Project Structure
+```
+ci-cd-project/
+│
+├── .github/
+│   └── workflows/
+│       └── ci-cd.yml                # GitHub Actions CI/CD pipeline
+│
+├── backend/
+│   ├── tests/
+│   │   └── api.tests.js              # Backend unit/API tests
+│   │
+│   ├── db.js                         # Database connection logic
+│   ├── server.js                    # Express server (health API)
+│   ├── package.json                 # Backend dependencies & scripts
+│   └── Dockerfile                   # Backend Dockerfile
+│
+├── frontend/
+│   ├── public/
+│   │   └── index.html               # UI (table-based health status)
+│   │
+│   ├── src/
+│   │   ├── App.js                   # Optional frontend JS logic
+│   │   └── index.js
+│   │
+│   ├── nginx.conf                   # Nginx config for frontend
+│   ├── package.json                 # Frontend metadata (optional)
+│   └── Dockerfile                   # Frontend Dockerfile
+│
+├── docker-compose.yml               # Multi-container orchestration
+├── deploy.sh                        # Deployment automation script
+├── .env                             # Environment variables (staging)
+├── README.md                        # Project documentation
+```
+## Backend Application (Express)
+### Exposes:
+• / → Backend status
+
+• /health → Health check endpoint
+
+### Uses environment variables for:
+• Database host
+
+• Database credentials
+
+• Port
+
+## Frontend Application
+• Static HTML page
+
+• Displays backend health status in table format
+
+• Served using Nginx
+
+• Fetches /health endpoint from backend
+
