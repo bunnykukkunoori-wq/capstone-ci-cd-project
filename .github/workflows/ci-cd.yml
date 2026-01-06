@@ -6,7 +6,9 @@ on:
       - main
 
 jobs:
-  # ---------------- BUILD / TEST / SCAN / PUSH ----------------
+# ============================
+# BUILD, TEST, SCAN & PUSH
+# ============================
   build_test_scan_push:
     runs-on: ubuntu-latest
 
@@ -38,79 +40,107 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y curl
-          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sudo sh -s -- -b /usr/local/bin
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
+          | sudo sh -s -- -b /usr/local/bin
 
       - name: Scan Backend Image
-        run: trivy image --severity HIGH,CRITICAL --exit-code 0 9148428653/backend:latest
+        run: trivy image --severity HIGH,CRITICAL --ignore-unfixed 9148428653/backend:latest
 
       - name: Scan Frontend Image
-        run: trivy image --severity HIGH,CRITICAL --exit-code 0 9148428653/frontend:latest
+        run: trivy image --severity HIGH,CRITICAL --ignore-unfixed 9148428653/frontend:latest
 
 
-  # ---------------- DEVELOPMENT DEPLOY ----------------
+# ============================
+# DEPLOY TO DEVELOPMENT
+# ============================
   deploy_development:
     runs-on: ubuntu-latest
     needs: build_test_scan_push
     environment: development
 
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Deploy to Development
+      - name: Deploy (Development)
         run: |
           docker pull 9148428653/backend:latest
           docker pull 9148428653/frontend:latest
-          docker compose down
           docker compose up -d --force-recreate
 
-      - name: Verify Development
+      - name: Verify backend health
         run: |
-          docker ps
-          curl -f http://localhost:5000/health
+          echo "Checking backend health..."
+          for i in {1..10}; do
+            if curl -f http://localhost:5000/health; then
+              echo "Backend is healthy "
+              exit 0
+            fi
+            sleep 3
+          done
+          echo "Backend failed "
+          exit 1
 
 
-  # ---------------- STAGING DEPLOY ----------------
+# ============================
+# DEPLOY TO STAGING
+# ============================
   deploy_staging:
     runs-on: ubuntu-latest
     needs: deploy_development
     environment: staging
 
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Deploy to Staging
+      - name: Deploy (Staging)
         run: |
           docker pull 9148428653/backend:latest
           docker pull 9148428653/frontend:latest
-          docker compose down
           docker compose up -d --force-recreate
 
-      - name: Verify Staging
+      - name: Verify backend health
         run: |
-          docker ps
-          curl -f http://localhost:5000/health
+          echo "Checking backend health..."
+          for i in {1..10}; do
+            if curl -f http://localhost:5000/health; then
+              echo "Backend is healthy "
+              exit 0
+            fi
+            sleep 3
+          done
+          echo "Backend failed "
+          exit 1
 
 
-  # ---------------- PRODUCTION DEPLOY ----------------
+# ============================
+# DEPLOY TO PRODUCTION (APPROVAL REQUIRED)
+# ============================
   deploy_production:
     runs-on: ubuntu-latest
     needs: deploy_staging
     environment: production
 
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Deploy to Production
+      - name: Deploy (Production)
         run: |
           docker pull 9148428653/backend:latest
           docker pull 9148428653/frontend:latest
-          docker compose down
           docker compose up -d --force-recreate
 
-      - name: Verify Production
+      - name: Verify backend health
         run: |
-          docker ps
-          curl -f http://localhost:5000/health
+          echo "Checking backend health..."
+          for i in {1..10}; do
+            if curl -f http://localhost:5000/health; then
+              echo "Backend is healthy "
+              exit 0
+            fi
+            sleep 3
+          done
+          echo "Backend failed "
+          exit 1
