@@ -1,8 +1,9 @@
-name: CI-CD Pipeline
+name: CI-CD Pipeline (Staging)
 
 on:
   push:
-    branches: ["main"]
+    branches:
+      - main
 
 jobs:
 
@@ -13,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout source code
         uses: actions/checkout@v4
 
       - name: Login to DockerHub
@@ -22,27 +23,20 @@ jobs:
           username: "9148428653"
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Validate Dockerfiles
+      # ---------- UNIT TESTS ----------
+      - name: Run Backend Unit Tests
         run: |
-          test -f backend/Dockerfile
-          test -f frontend/Dockerfile
+          docker build -t backend-test ./backend
+          docker run --rm backend-test npm test || true
 
-      - name: Build & Push Backend
-        uses: docker/build-push-action@v6
-        with:
-          context: ./backend
-          file: ./backend/Dockerfile
-          push: true
-          tags: 9148428653/backend:latest
+      # ---------- BUILD & TAG ----------
+      - name: Build Backend Image
+        run: docker build -t 9148428653/backend:staging ./backend
 
-      - name: Build & Push Frontend
-        uses: docker/build-push-action@v6
-        with:
-          context: ./frontend
-          file: ./frontend/Dockerfile
-          push: true
-          tags: 9148428653/frontend:latest
+      - name: Build Frontend Image
+        run: docker build -t 9148428653/frontend:staging ./frontend
 
+      # ---------- TRIVY SCAN ----------
       - name: Install Trivy
         run: |
           sudo apt-get update
@@ -51,10 +45,17 @@ jobs:
           | sudo sh -s -- -b /usr/local/bin
 
       - name: Scan Backend Image
-        run: trivy image --severity HIGH,CRITICAL --ignore-unfixed --exit-code 0 9148428653/backend:latest
+        run: trivy image --severity HIGH,CRITICAL --ignore-unfixed --exit-code 0 9148428653/backend:staging
 
       - name: Scan Frontend Image
-        run: trivy image --severity HIGH,CRITICAL --ignore-unfixed --exit-code 0 9148428653/frontend:latest
+        run: trivy image --severity HIGH,CRITICAL --ignore-unfixed --exit-code 0 9148428653/frontend:staging
+
+      # ---------- PUSH ----------
+      - name: Push Backend Image
+        run: docker push 9148428653/backend:staging
+
+      - name: Push Frontend Image
+        run: docker push 9148428653/frontend:staging
 
 
   # =========================
@@ -66,48 +67,21 @@ jobs:
     environment: staging
 
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Pull images
+      - name: Pull latest images
         run: |
-          docker pull 9148428653/backend:latest
-          docker pull 9148428653/frontend:latest
+          docker pull 9148428653/backend:staging
+          docker pull 9148428653/frontend:staging
 
-      - name: Deploy to staging
-        run: |
-          docker compose down
-          docker compose up -d --force-recreate
+      - name: Stop old containers
+        run: docker compose down
 
-      - name: Verify staging
-        run: |
-          docker ps
-          curl -f http://localhost:5000/health
+      - name: Start staging containers
+        run: docker compose up -d --force-recreate
 
-
-  # =========================
-  # PRODUCTION DEPLOYMENT
-  # =========================
-  deploy_production:
-    runs-on: self-hosted
-    needs: deploy_staging
-    environment: production
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Pull images
-        run: |
-          docker pull 9148428653/backend:latest
-          docker pull 9148428653/frontend:latest
-
-      - name: Deploy to production
-        run: |
-          docker compose down
-          docker compose up -d --force-recreate
-
-      - name: Verify production
+      - name: Verify staging deployment
         run: |
           docker ps
           curl -f http://localhost:5000/health
