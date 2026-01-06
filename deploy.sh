@@ -10,4 +10,4 @@ docker-compose up -d
 echo "Running DB migrations..."
 docker exec backend node migrate.js || true
 
-echo "Deployment Successful ✔"
+echo "Deployment Successful "
