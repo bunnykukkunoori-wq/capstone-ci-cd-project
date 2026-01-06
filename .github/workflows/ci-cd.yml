@@ -6,9 +6,9 @@ on:
       - main
 
 jobs:
-  # =========================
-  # BUILD · TEST · SCAN · PUSH
-  # =========================
+# =========================
+# BUILD, SCAN & PUSH
+# =========================
   build_test_scan_push:
     runs-on: ubuntu-latest
 
@@ -16,14 +16,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # DockerHub Login
       - name: Login to DockerHub
         uses: docker/login-action@v3
         with:
           username: 9148428653
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # Build & Push Backend
       - name: Build & Push Backend
         uses: docker/build-push-action@v6
         with:
@@ -32,7 +30,6 @@ jobs:
           push: true
           tags: 9148428653/backend:latest
 
-      # Build & Push Frontend
       - name: Build & Push Frontend
         uses: docker/build-push-action@v6
         with:
@@ -41,7 +38,6 @@ jobs:
           push: true
           tags: 9148428653/frontend:latest
 
-      # Install Trivy
       - name: Install Trivy
         run: |
           sudo apt-get update
@@ -49,17 +45,16 @@ jobs:
           curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
           | sudo sh -s -- -b /usr/local/bin
 
-      # Scan Images
       - name: Scan Backend Image
-        run: trivy image --severity HIGH,CRITICAL --ignore-unfixed 9148428653/backend:latest
+        run: trivy image --severity HIGH,CRITICAL --ignore-unfixed --exit-code 0 9148428653/backend:latest
 
       - name: Scan Frontend Image
-        run: trivy image --severity HIGH,CRITICAL --ignore-unfixed 9148428653/frontend:latest
+        run: trivy image --severity HIGH,CRITICAL --ignore-unfixed --exit-code 0 9148428653/frontend:latest
 
 
-  # =========================
-  # STAGING DEPLOYMENT
-  # =========================
+# =========================
+# DEPLOY TO STAGING
+# =========================
   deploy_staging:
     runs-on: ubuntu-latest
     needs: build_test_scan_push
@@ -69,43 +64,69 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Pull Docker Images
+      - name: Pull latest images
         run: |
           docker pull 9148428653/backend:latest
           docker pull 9148428653/frontend:latest
 
-      - name: Deploy to Staging
+      - name: Stop old containers
         run: |
-          docker compose -f docker-compose.yml up -d --force-recreate
+          docker compose down || true
 
-      - name: Verify Staging Deployment
+      - name: Start containers (Staging)
         run: |
-          docker ps
-          curl -f http://localhost:5000/health
+          docker compose up -d --force-recreate
+
+      - name: Verify backend health (Staging)
+        run: |
+          echo "Checking backend health..."
+          for i in {1..20}; do
+            if curl -s http://localhost:5000/health | grep -q OK; then
+              echo "Staging backend is healthy"
+              exit 0
+            fi
+            sleep 3
+          done
+          echo "Staging health check failed"
+          docker logs backend
+          exit 1
 
 
-  # =========================
-  # PRODUCTION DEPLOYMENT
-  # =========================
+# =========================
+# DEPLOY TO PRODUCTION
+# =========================
   deploy_production:
     runs-on: ubuntu-latest
     needs: deploy_staging
-    environment: production
+    environment: production   # 🔒 Manual approval required
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Pull Docker Images
+      - name: Pull latest images
         run: |
           docker pull 9148428653/backend:latest
           docker pull 9148428653/frontend:latest
 
-      - name: Deploy to Production
+      - name: Stop old containers
         run: |
-          docker compose -f docker-compose.yml up -d --force-recreate
+          docker compose down || true
 
-      - name: Verify Production Deployment
+      - name: Start containers (Production)
         run: |
-          docker ps
-          curl -f http://localhost:5000/health
+          docker compose up -d --force-recreate
+
+      - name: Verify backend health (Production)
+        run: |
+          echo "Checking production backend health..."
+          for i in {1..20}; do
+            if curl -s http://localhost:5000/health | grep -q OK; then
+              echo "Production backend is healthy"
+              exit 0
+            fi
+            sleep 3
+          done
+          echo "Production health check failed"
+          docker logs backend
+          exit 1
