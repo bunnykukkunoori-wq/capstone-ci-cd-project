@@ -1,122 +1,136 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>CI/CD Project Dashboard</title>
-
-<style>
-    body{
-        margin:0;
-        font-family:Arial, Helvetica, sans-serif;
-        background: linear-gradient(145deg,#1f1c2c,#928dab);
-        min-height:100vh;
-        display:flex;
-        justify-content:center;
-        align-items:center;
-        color:white;
+  <meta charset="UTF-8" />
+  <title>Capstone CI-CD Health</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
     }
 
-    .wrapper{
-        width:85%;
-        max-width:1150px;
-        background:rgba(255,255,255,0.12);
-        border-radius:18px;
-        padding:35px;
-        box-shadow:0 15px 35px rgba(0,0,0,0.3);
-        backdrop-filter:blur(10px);
+    .card {
+      background: #020617;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 0 25px rgba(56, 189, 248, 0.3);
+      width: 420px;
+      text-align: center;
     }
 
-    h1{
-        text-align:center;
-        margin-bottom:20px;
-        letter-spacing:1px;
-        font-size:32px;
+    h1 {
+      color: #38bdf8;
+      margin-bottom: 10px;
     }
 
-    .section-title{
-        margin-top:30px;
-        font-size:22px;
-        border-left:6px solid #ffd369;
-        padding-left:10px;
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
     }
 
-    .grid{
-        display:grid;
-        grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
-        gap:15px;
-        margin-top:15px;
+    th, td {
+      border: 1px solid #38bdf8;
+      padding: 12px;
+      text-align: center;
     }
 
-    .card{
-        background:rgba(255,255,255,0.1);
-        padding:18px;
-        border-radius:12px;
-        box-shadow:0 5px 15px rgba(0,0,0,0.25);
-        transition:0.3s;
+    th {
+      background: #0284c7;
     }
 
-    .card:hover{
-        transform:translateY(-5px);
+    .up {
+      color: #22c55e;
+      font-weight: bold;
     }
 
-    .footer{
-        margin-top:35px;
-        text-align:center;
-        font-size:18px;
-        opacity:0.9;
+    .down {
+      color: #ef4444;
+      font-weight: bold;
     }
 
-    #root{
-        font-size:20px;
-        color:#fffca8;
-        margin-top:5px;
+    button {
+      margin-top: 20px;
+      width: 100%;
+      padding: 12px;
+      background: #14b8a6;
+      border: none;
+      border-radius: 8px;
+      color: #000;
+      font-weight: bold;
+      cursor: pointer;
     }
-</style>
+
+    button:hover {
+      background: #2dd4bf;
+    }
+  </style>
 </head>
-
 <body>
 
-<div class="wrapper">
-    
-    <h1>CI/CD 2-Tier Web Application Project</h1>
+<div class="card">
+  <h1>Capstone CI-CD Project</h1>
+  <p>Frontend connected successfully</p>
 
-    <!-- Architecture Section -->
-    <div class="section-title">Application Architecture</div>
-    <div class="grid">
-        <div class="card">Frontend – Static Web UI</div>
-        <div class="card">Backend – Flask / Express API</div>
-        <div class="card">Dockerized Services</div>
-        <div class="card">Secure Non-Root Containers</div>
-        <div class="card">Environment Variables</div>
-        <div class="card">Optimized Layer Caching</div>
-    </div>
+  <table>
+    <thead>
+      <tr>
+        <th>Component</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Frontend</td>
+        <td id="frontend" class="up">UP</td>
+      </tr>
+      <tr>
+        <td>Backend</td>
+        <td id="backend">Loading...</td>
+      </tr>
+      <tr>
+        <td>Database</td>
+        <td id="database">Loading...</td>
+      </tr>
+    </tbody>
+  </table>
 
-    <!-- Docker Compose Section -->
-    <div class="section-title">Docker Compose Configuration</div>
-    <div class="grid">
-        <div class="card">Application Services</div>
-        <div class="card">Database (PostgreSQL / MySQL)</div>
-        <div class="card">Network Configuration</div>
-        <div class="card">Persistent Volumes</div>
-        <div class="card">Container Architecture Documented</div>
-    </div>
-
-    <!-- CICD Section -->
-    <div class="section-title">CI / CD Pipeline</div>
-    <div class="grid">
-        <div class="card">Build Docker Images</div>
-        <div class="card">Run Unit Tests</div>
-        <div class="card">Security Scan (Trivy)</div>
-        <div class="card">Tag & Push to Registry</div>
-        <div class="card">Deploy to Staging / Production</div>
-    </div>
-
-    <div class="footer">
-        Frontend Connected with Backend Successfully
-        <div>Server Time:</div>
-        <div id="root"></div>
-    </div>
+  <button onclick="loadHealth()">Refresh Status</button>
 </div>
+
+<script>
+  async function loadHealth() {
+    try {
+      const res = await fetch("http://localhost:5000/health");
+      const data = await res.json();
+
+      // Backend
+      document.getElementById("backend").textContent = data.backend;
+      document.getElementById("backend").className =
+        data.backend === "UP" ? "up" : "down";
+
+      // Database
+      document.getElementById("database").textContent = data.database;
+      document.getElementById("database").className =
+        data.database === "CONNECTED" ? "up" : "down";
+
+    } catch (err) {
+      document.getElementById("backend").textContent = "DOWN";
+      document.getElementById("backend").className = "down";
+
+      document.getElementById("database").textContent = "DISCONNECTED";
+      document.getElementById("database").className = "down";
+    }
+  }
+
+  // Auto-load on page open
+  loadHealth();
+</script>
 
 </body>
 </html>
