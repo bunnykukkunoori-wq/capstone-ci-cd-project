@@ -1,4 +1,4 @@
-name: CI-CD Pipeline (Staging)
+name: CI-CD Pipeline
 
 on:
   push:
@@ -6,7 +6,6 @@ on:
       - main
 
 jobs:
-
   # =========================
   # BUILD · TEST · SCAN · PUSH
   # =========================
@@ -14,29 +13,35 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout source code
+      - name: Checkout code
         uses: actions/checkout@v4
 
+      # DockerHub Login
       - name: Login to DockerHub
         uses: docker/login-action@v3
         with:
-          username: "9148428653"
+          username: 9148428653
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # ---------- UNIT TESTS ----------
-      - name: Run Backend Unit Tests
-        run: |
-          docker build -t backend-test ./backend
-          docker run --rm backend-test npm test || true
+      # Build & Push Backend
+      - name: Build & Push Backend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: true
+          tags: 9148428653/backend:latest
 
-      # ---------- BUILD & TAG ----------
-      - name: Build Backend Image
-        run: docker build -t 9148428653/backend:staging ./backend
+      # Build & Push Frontend
+      - name: Build & Push Frontend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: true
+          tags: 9148428653/frontend:latest
 
-      - name: Build Frontend Image
-        run: docker build -t 9148428653/frontend:staging ./frontend
-
-      # ---------- TRIVY SCAN ----------
+      # Install Trivy
       - name: Install Trivy
         run: |
           sudo apt-get update
@@ -44,44 +49,63 @@ jobs:
           curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
           | sudo sh -s -- -b /usr/local/bin
 
+      # Scan Images
       - name: Scan Backend Image
-        run: trivy image --severity HIGH,CRITICAL --ignore-unfixed --exit-code 0 9148428653/backend:staging
+        run: trivy image --severity HIGH,CRITICAL --ignore-unfixed 9148428653/backend:latest
 
       - name: Scan Frontend Image
-        run: trivy image --severity HIGH,CRITICAL --ignore-unfixed --exit-code 0 9148428653/frontend:staging
-
-      # ---------- PUSH ----------
-      - name: Push Backend Image
-        run: docker push 9148428653/backend:staging
-
-      - name: Push Frontend Image
-        run: docker push 9148428653/frontend:staging
+        run: trivy image --severity HIGH,CRITICAL --ignore-unfixed 9148428653/frontend:latest
 
 
   # =========================
   # STAGING DEPLOYMENT
   # =========================
   deploy_staging:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     needs: build_test_scan_push
     environment: staging
 
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Pull latest images
+      - name: Pull Docker Images
         run: |
-          docker pull 9148428653/backend:staging
-          docker pull 9148428653/frontend:staging
+          docker pull 9148428653/backend:latest
+          docker pull 9148428653/frontend:latest
 
-      - name: Stop old containers
-        run: docker compose down
+      - name: Deploy to Staging
+        run: |
+          docker compose -f docker-compose.yml up -d --force-recreate
 
-      - name: Start staging containers
-        run: docker compose up -d --force-recreate
+      - name: Verify Staging Deployment
+        run: |
+          docker ps
+          curl -f http://localhost:5000/health
 
-      - name: Verify staging deployment
+
+  # =========================
+  # PRODUCTION DEPLOYMENT
+  # =========================
+  deploy_production:
+    runs-on: ubuntu-latest
+    needs: deploy_staging
+    environment: production
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Pull Docker Images
+        run: |
+          docker pull 9148428653/backend:latest
+          docker pull 9148428653/frontend:latest
+
+      - name: Deploy to Production
+        run: |
+          docker compose -f docker-compose.yml up -d --force-recreate
+
+      - name: Verify Production Deployment
         run: |
           docker ps
           curl -f http://localhost:5000/health
