@@ -168,6 +168,25 @@ docker compose down
 
 4. Push Images to Docker Hub
 
-5. Deploy to Staging
+5. Deploy to Development
 
-6. Deploy to Production (Approval Required)
+6. Deploy to Staging
+
+7. Deploy to Production (Approval Required)
+
+## Local Development URLs (Docker / Localhost)
+
+### Frontend UI( User Interface) URL
+```
+http://localhost:3000
+```
+### Backend API (root) URL
+```
+http://localhost:5000
+```
+### Backend Health Check
+```
+http://localhost:5000/health
+```
+
+
