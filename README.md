@@ -118,3 +118,35 @@ ci-cd-project/
 
 • Fetches /health endpoint from backend
 
+## Docker Compose (Local Development)
+
+### Features Implemented
+
+• Application services
+
+• PostgreSQLdatabase
+
+• Custom network
+
+• Persistent volume
+
+• Health checks
+
+### 1. Start Application Locally
+```
+docker compose up -d
+```
+![Docker Compose Running](screenshots/docker-compose-running.png)
+
+### 2. Build all application images (frontend + backend)
+```
+docker compose build
+```
+### 3. Check Running Containers
+```
+docker ps
+```
+### 4. Stop Application
+```
+docker compose down
+```
