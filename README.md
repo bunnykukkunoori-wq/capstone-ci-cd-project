@@ -148,7 +148,26 @@ docker compose build
 ```
 docker ps
 ```
+![CI-CD Project Screenshot](./screenshots/ci-cd%20project2.png)
+
 ### 4. Stop Application
 ```
 docker compose down
 ```
+![CI-CD Project Screenshot](./screenshots/ci-cd%20project3.png)
+
+## CI/CD Pipeline (GitHub Actions)
+
+### Pipeline Stages
+
+1. Build Docker Images
+
+2. Run Unit Tests
+
+3. Scan Images (Trivy)
+
+4. Push Images to Docker Hub
+
+5. Deploy to Staging
+
+6. Deploy to Production (Approval Required)
