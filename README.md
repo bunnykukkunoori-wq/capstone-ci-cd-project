@@ -142,6 +142,8 @@ docker compose up -d
 ```
 docker compose build
 ```
+![CI-CD Project](./screenshots/ci-cd%20project.png)
+
 ### 3. Check Running Containers
 ```
 docker ps
