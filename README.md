@@ -136,7 +136,7 @@ ci-cd-project/
 ```
 docker compose up -d
 ```
-![Docker Compose Running](screenshots/docker-compose-running.png)
+![CI-CD Project](./screenshots/ci%20-%20cd%20project.png)
 
 ### 2. Build all application images (frontend + backend)
 ```
