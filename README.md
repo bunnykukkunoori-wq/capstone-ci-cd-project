@@ -278,6 +278,8 @@ Manual Approval
    ↓
 Deploy to Production
 ```
+### Expected Output
+![CI-CD Project Screenshot](screenshots/ci-cd%20project7.png)
 
 ## Local Development URLs (Localhost)
 
