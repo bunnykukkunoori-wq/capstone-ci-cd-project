@@ -293,6 +293,8 @@ http://localhost:3000
 ```
 http://localhost:5000
 ```
+![CI-CD Project Screenshot 6](screenshots/ci-cd%20project6.png)
+
 ### Backend Health Check
 ```
 http://localhost:5000/health
