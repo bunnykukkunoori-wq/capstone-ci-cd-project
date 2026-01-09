@@ -174,7 +174,112 @@ docker compose down
 
 7. Deploy to Production (Approval Required)
 
-## Local Development URLs (Docker / Localhost)
+### CI/CD END-TO-END WORKFLOW EXPLANATION:
+#### Stage 1: Build Docker Images
+##### Purpose:
+• Convert application source code into Docker images for:
+
+   1. Backend (Node.js / Express)
+
+   2. Frontend (React / Static site)
+##### What Happens
+• GitHub Actions checks out the source code
+
+• Docker builds images using Dockerfiles
+
+• Multi-stage builds reduce image size
+
+• Layer caching improves build speed
+#### Stage 2: Run Unit Tests
+##### Purpose:
+• Ensure code quality and prevent broken builds.
+##### What Happens
+• Tests run inside containers (same environment as production)
+
+• Backend tests validate:
+
+   1. API routes
+
+   2. Database connectivity
+
+• Frontend tests (optional)
+
+#### Stage 3: Scan Docker Images (Trivy)
+##### Purpose:
+• Detect security vulnerabilities before deployment.
+##### What Happens
+• Trivy scans images for:
+
+  1. OS vulnerabilities
+
+  2. Dependency issues
+
+  3. CVEs (Critical/High)
+
+#### Stage 4: Push Images to Docker Hub
+##### Purpose:
+• Store versioned images in a central registry.
+##### What Happens
+• Pipeline logs into Docker Hub using secrets
+
+• Images are tagged and pushed
+
+#### Stage 5: Deploy to Development
+##### Purpose:
+• Deploy latest changes for developer validation.
+##### What Happens
+• Containers deployed using docker-compose
+
+• Development environment uses:
+
+   1. .env.development
+
+   2. Debug settings enabled
+
+#### Stage 6: Deploy to Staging
+##### Purpose:
+• Pre-production testing environment.
+##### What Happens
+• Uses .env.staging
+
+• Mirrors production closely
+
+• Database migrations executed
+
+• Health checks performed
+
+#### Stage 7: Deploy to Production (Manual Approval)
+##### Purpose:
+• Requires manual approval in GitHub Actions
+
+• Uses .env.production
+
+• Runs on protected environment
+
+• Zero-downtime deployment 
+
+### Final CI/CD Flow Diagram
+```
+Code Push
+   ↓
+Build Images
+   ↓
+Run Tests
+   ↓
+Trivy Scan
+   ↓
+Push to Docker Hub
+   ↓
+Deploy to Development
+   ↓
+Deploy to Staging
+   ↓
+Manual Approval
+   ↓
+Deploy to Production
+```
+
+## Local Development URLs (Localhost)
 
 ### Frontend UI( User Interface) URL
 ```
