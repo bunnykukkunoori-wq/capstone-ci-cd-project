@@ -414,3 +414,25 @@ http://localhost:5000/health
 
 • GitHub Secrets – Secure credentials storage
 
+### Learning Outcomes
+
+• Understand CI/CD Concepts End-to-End
+
+• Build and Containerize Applications
+
+• Work with Docker Compose
+
+• Implement Automated Testing
+
+• Integrate Security Scanning (Trivy)
+
+• Build GitHub Actions CI/CD Pipelines
+
+• Environment-Specific Deployments
+
+• Health Checks & Monitoring
+
+### Author
+Name: Bunny Kukkunoori
+Project: End-to-End CI/CD Pipeline using Docker & GitHub Actions
+GitHub: https://github.com/bunnykukkunoori-wq
