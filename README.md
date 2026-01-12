@@ -281,6 +281,111 @@ Deploy to Production
 ### Expected Output
 ![CI-CD Project Screenshot](screenshots/ci-cd%20project7.png)
 
+### Why Trivy is Used in CI/CD
+
+• Trivy helps ensure that applications are secure before deployment by scanning for:
+
+• Known vulnerabilities (CVEs)
+
+• OS package issues
+
+• Application dependency vulnerabilities
+
+• Hardcoded secrets (API keys, passwords)
+
+### How Trivy Works
+
+1. Scans Docker images or source code
+
+2. Compares components against a vulnerability database
+
+3. Reports issues by severity:
+
+     • LOW
+
+     • MEDIUM
+
+     • HIGH
+
+     • CRITICAL
+
+### Benefits of Trivy
+
+• Fast and easy to use
+
+• No complex configuration required
+
+• Works well with GitHub Actions & Jenkins
+
+• Improves application security automatically
+
+### How to Create Development, Staging & Production Environments 
+#### Create GitHub Environments
+
+• Steps:
+
+1. Go to GitHub Repository
+
+2. Click Settings
+
+3. Open Environments
+
+4. Create:
+
+   • development
+
+   • staging
+
+   • production
+#### Production Protection (Recommended)
+
+•  Enable Required reviewers
+
+• Add approval before deployment
+
+#### Staging Environment
+
+• The staging environment closely mirrors production and is used for final validation.
+
+• Acts as a pre-production environment
+
+• Same configuration as production
+
+• Used for integration testing
+
+• CI/CD automatically deploys here
+
+• Helps catch issues before production
+#### Production Environment
+
+• The production environment is the live system used by real users.
+
+• Fully stable & optimized
+
+• Uses real data
+
+• Requires manual approval before deployment
+
+• Strict security & monitoring
+
+• Zero-downtime deployments preferred
+#### Development Environment
+• The development environment is used by developers while writing and testing code.
+
+• Used for active coding & debugging
+
+• Runs on local machine or dev server
+
+• Uses test data / dummy data
+
+• Changes are frequent and unstable
+
+• Fast feedback loop
+
+### Expected Output
+
+
+
 ## Local Development URLs (Localhost)
 
 ### Frontend UI( User Interface) URL
@@ -301,5 +406,11 @@ http://localhost:5000/health
 ```
 ![CI-CD Project Screenshot 5](screenshots/ci-cd%20project5.png)
 
+### Security Tools
 
+• Trivy – Container vulnerability scanning
+
+• Non-root Docker users – Container hardening
+
+• GitHub Secrets – Secure credentials storage
 
