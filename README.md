@@ -434,5 +434,7 @@ http://localhost:5000/health
 
 ### Author
 Name: Bunny Kukkunoori
+
 Project: End-to-End CI/CD Pipeline using Docker & GitHub Actions
+
 GitHub: https://github.com/bunnykukkunoori-wq
