@@ -383,7 +383,7 @@ Deploy to Production
 • Fast feedback loop
 
 ### Expected Output
-
+![CI-CD Project 8](screenshots/ci-cd%20project8.png)
 
 
 ## Local Development URLs (Localhost)
